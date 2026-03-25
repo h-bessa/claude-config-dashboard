@@ -29,8 +29,10 @@ export default async function MindmapPage() {
         title="Configuration Mindmap"
         description="Interactive architecture visualization — drag, zoom, and explore"
       />
-      <div className="glass-card overflow-hidden" style={{ height: "calc(100vh - 200px)" }}>
-        <ExcalidrawMindmap data={configData} />
+      <div className="glass-card relative" style={{ height: "calc(100vh - 200px)" }}>
+        <div className="absolute inset-0 overflow-hidden rounded-[inherit]">
+          <ExcalidrawMindmap data={configData} />
+        </div>
       </div>
     </>
   );

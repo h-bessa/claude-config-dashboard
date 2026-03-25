@@ -255,7 +255,7 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
   }
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div className="excalidraw-wrapper" style={{ width: "100%", height: "100%", position: "relative" }}>
       <ExcalidrawComp
         initialData={{
           elements,
