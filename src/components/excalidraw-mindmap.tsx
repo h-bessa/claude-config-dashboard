@@ -255,18 +255,20 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
   }
 
   return (
-    <ExcalidrawComp
-      initialData={{
-        elements,
-        appState: {
-          viewBackgroundColor: "#0a0a14",
-          theme: "dark",
-          zenModeEnabled: true,
-          viewModeEnabled: false,
-        },
-        scrollToContent: true,
-      }}
-      theme="dark"
-    />
+    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+      <ExcalidrawComp
+        initialData={{
+          elements,
+          appState: {
+            viewBackgroundColor: "#0a0a14",
+            theme: "dark",
+            zenModeEnabled: true,
+            viewModeEnabled: false,
+          },
+          scrollToContent: true,
+        }}
+        theme="dark"
+      />
+    </div>
   );
 }
