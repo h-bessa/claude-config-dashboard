@@ -285,7 +285,7 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
           theme: "dark",
           zenModeEnabled: false,
           viewModeEnabled: false,
-          gridSize: null,
+          gridSize: 0,
         },
         scrollToContent: true,
       }}
