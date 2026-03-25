@@ -1,19 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-const ExcalidrawWithConvert = dynamic(
-  () =>
-    import("@excalidraw/excalidraw").then((mod) => ({
-      default: mod.Excalidraw,
-      convert: mod.convertToExcalidrawElements,
-    })),
-  { ssr: false }
-);
-
-// We need to wrap because dynamic import returns a component, not the convert function
-// So we'll import them separately inside the client component
 const ExcalidrawComp = dynamic(
   () => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw),
   {
@@ -53,7 +42,7 @@ function buildSkeletonElements(data: ConfigData) {
     label: {
       text: "Claude Code Config",
       fontSize: 20,
-      strokeColor: "#fff",
+      strokeColor: "#ffffff",
     },
   });
 
@@ -102,7 +91,10 @@ function buildSkeletonElements(data: ConfigData) {
       label: `Permissions (${data.permissions.allow + data.permissions.deny})`,
       color: "#ec4899",
       bg: "#4d1a33",
-      items: [`${data.permissions.allow} allow`, `${data.permissions.deny} deny`],
+      items: [
+        `${data.permissions.allow} allow`,
+        `${data.permissions.deny} deny`,
+      ],
       x: -100,
       y: -420,
     },
@@ -112,7 +104,6 @@ function buildSkeletonElements(data: ConfigData) {
     const bw = 200;
     const bh = 44;
 
-    // Branch node
     elements.push({
       type: "rectangle",
       x: branch.x,
@@ -131,13 +122,10 @@ function buildSkeletonElements(data: ConfigData) {
       },
     });
 
-    // Arrow from center to branch
     elements.push({
       type: "arrow",
       x: 0,
       y: 0,
-      width: branch.x + bw / 2,
-      height: branch.y + bh / 2,
       strokeColor: branch.color,
       strokeWidth: 1.5,
       roughness: 0,
@@ -150,12 +138,10 @@ function buildSkeletonElements(data: ConfigData) {
       endArrowhead: "arrow",
     });
 
-    // Sub-items
     const items = branch.items.slice(0, 10);
     const isLeft = branch.x < 0;
 
     items.forEach((item, i) => {
-      const cols = Math.ceil(items.length / 6);
       const col = Math.floor(i / 6);
       const row = i % 6;
       const iw = 155;
@@ -183,13 +169,10 @@ function buildSkeletonElements(data: ConfigData) {
         },
       });
 
-      // Arrow from branch to item
       elements.push({
         type: "arrow",
         x: isLeft ? branch.x : branch.x + bw,
         y: branch.y + bh / 2,
-        width: isLeft ? ix + iw - branch.x : ix - (branch.x + bw),
-        height: iy + ih / 2 - (branch.y + bh / 2),
         strokeColor: branch.color + "44",
         strokeWidth: 1,
         roughness: 0,
@@ -206,7 +189,6 @@ function buildSkeletonElements(data: ConfigData) {
       });
     });
 
-    // "+N more" node
     if (branch.items.length > 10) {
       const row = Math.min(items.length, 6);
       const ix = isLeft ? branch.x - 180 : branch.x + bw + 20;
@@ -218,14 +200,14 @@ function buildSkeletonElements(data: ConfigData) {
         width: 155,
         height: 28,
         backgroundColor: "#141425",
-        strokeColor: "#555",
+        strokeColor: "#555555",
         strokeWidth: 1,
         fillStyle: "solid",
         roughness: 0,
         label: {
           text: `+${branch.items.length - 10} more...`,
           fontSize: 11,
-          strokeColor: "#666",
+          strokeColor: "#666666",
         },
       });
     }
@@ -235,18 +217,34 @@ function buildSkeletonElements(data: ConfigData) {
 }
 
 export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
-  const [elements, setElements] = useState<any[] | null>(null);
+  const [convertedElements, setConvertedElements] = useState<any[] | null>(
+    null
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [api, setApi] = useState<any>(null);
 
   useEffect(() => {
-    // Import convertToExcalidrawElements dynamically on the client
     import("@excalidraw/excalidraw").then((mod) => {
       const skeleton = buildSkeletonElements(data);
       const converted = mod.convertToExcalidrawElements(skeleton);
-      setElements(converted);
+      setConvertedElements(converted);
     });
   }, [data]);
 
-  if (!elements) {
+  // scroll to content once API is available
+  useEffect(() => {
+    if (api && convertedElements && convertedElements.length > 0) {
+      setTimeout(() => {
+        api.scrollToContent(api.getSceneElements(), { fitToViewport: true, viewportZoomFactor: 0.85 });
+      }, 300);
+    }
+  }, [api, convertedElements]);
+
+  const onApiReady = useCallback((excalidrawApi: any) => {
+    setApi(excalidrawApi);
+  }, []);
+
+  if (!convertedElements) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
         Loading mindmap...
@@ -255,10 +253,14 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
   }
 
   return (
-    <div className="excalidraw-wrapper" style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div
+      className="excalidraw-wrapper"
+      style={{ width: "100%", height: "100%", position: "relative" }}
+    >
       <ExcalidrawComp
+        excalidrawAPI={onApiReady}
         initialData={{
-          elements,
+          elements: convertedElements,
           appState: {
             viewBackgroundColor: "#0a0a14",
             theme: "dark",
