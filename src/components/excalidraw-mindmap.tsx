@@ -1,11 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Excalidraw = dynamic(
   () => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw),
-  { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-muted-foreground">Loading mindmap...</div> }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        Loading mindmap...
+      </div>
+    ),
+  }
 );
 
 interface ConfigData {
@@ -17,233 +24,268 @@ interface ConfigData {
   mcpServers: string[];
 }
 
-function generateId() {
-  return Math.random().toString(36).slice(2, 10);
-}
+function buildScene(data: ConfigData) {
+  const elements: any[] = [];
+  let idCounter = 0;
+  const nextId = () => `el_${++idCounter}`;
 
-function createNode(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  text: string,
-  options: {
-    bgColor?: string;
-    strokeColor?: string;
-    fontSize?: number;
-    roundness?: number;
-  } = {}
-) {
-  const rectId = generateId();
-  const textId = generateId();
+  function addRect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    bg: string,
+    stroke: string,
+    label: string,
+    fontSize: number = 14
+  ) {
+    const rectId = nextId();
+    const textId = nextId();
 
-  const rect = {
-    id: rectId,
-    type: "rectangle" as const,
-    x,
-    y,
-    width,
-    height,
-    strokeColor: options.strokeColor || "#555",
-    backgroundColor: options.bgColor || "#1e1e1e",
-    fillStyle: "solid" as const,
-    strokeWidth: 1,
-    roughness: 0,
-    opacity: 100,
-    roundness: { type: 3, value: options.roundness ?? 12 },
-    boundElements: [{ type: "text" as const, id: textId }],
-    groupIds: [],
-    frameId: null,
-    isDeleted: false,
-    locked: false,
-    link: null,
-    updated: Date.now(),
-    version: 1,
-    versionNonce: Math.floor(Math.random() * 1000000),
-    seed: Math.floor(Math.random() * 1000000),
-    angle: 0,
-  };
+    elements.push({
+      id: rectId,
+      type: "rectangle",
+      x,
+      y,
+      width: w,
+      height: h,
+      angle: 0,
+      strokeColor: stroke,
+      backgroundColor: bg,
+      fillStyle: "solid",
+      strokeWidth: 1.5,
+      roughness: 0,
+      opacity: 100,
+      groupIds: [],
+      frameId: null,
+      roundness: { type: 3 },
+      isDeleted: false,
+      boundElements: [{ id: textId, type: "text" }],
+      locked: false,
+      link: null,
+      updated: 1,
+      seed: idCounter * 111,
+      version: 1,
+      versionNonce: idCounter * 222,
+    });
 
-  const textEl = {
-    id: textId,
-    type: "text" as const,
-    x: x + width / 2,
-    y: y + height / 2,
-    width: width - 16,
-    height: options.fontSize ? options.fontSize * 1.4 : 20,
-    text,
-    fontSize: options.fontSize || 14,
-    fontFamily: 3, // monospace
-    textAlign: "center" as const,
-    verticalAlign: "middle" as const,
-    strokeColor: options.strokeColor || "#e8e8e8",
-    backgroundColor: "transparent",
-    fillStyle: "solid" as const,
-    strokeWidth: 1,
-    roughness: 0,
-    opacity: 100,
-    roundness: null,
-    containerId: rectId,
-    originalText: text,
-    autoResize: true,
-    lineHeight: 1.25,
-    boundElements: [],
-    groupIds: [],
-    frameId: null,
-    isDeleted: false,
-    locked: false,
-    link: null,
-    updated: Date.now(),
-    version: 1,
-    versionNonce: Math.floor(Math.random() * 1000000),
-    seed: Math.floor(Math.random() * 1000000),
-    angle: 0,
-  };
+    elements.push({
+      id: textId,
+      type: "text",
+      x: x + 8,
+      y: y + h / 2 - fontSize * 0.7,
+      width: w - 16,
+      height: fontSize * 1.4,
+      angle: 0,
+      strokeColor: stroke,
+      backgroundColor: "transparent",
+      fillStyle: "solid",
+      strokeWidth: 1,
+      roughness: 0,
+      opacity: 100,
+      groupIds: [],
+      frameId: null,
+      roundness: null,
+      isDeleted: false,
+      boundElements: null,
+      locked: false,
+      link: null,
+      updated: 1,
+      seed: idCounter * 333,
+      version: 1,
+      versionNonce: idCounter * 444,
+      text: label,
+      fontSize,
+      fontFamily: 3,
+      textAlign: "center",
+      verticalAlign: "middle",
+      containerId: rectId,
+      originalText: label,
+      autoResize: true,
+      lineHeight: 1.25,
+    });
 
-  return { rect, text: textEl, id: rectId };
-}
+    return rectId;
+  }
 
-function createArrow(
-  startId: string,
-  endId: string,
-  startX: number,
-  startY: number,
-  endX: number,
-  endY: number,
-  color: string = "#555"
-) {
-  const id = generateId();
-  return {
-    id,
-    type: "arrow" as const,
-    x: startX,
-    y: startY,
-    width: endX - startX,
-    height: endY - startY,
-    strokeColor: color,
-    backgroundColor: "transparent",
-    fillStyle: "solid" as const,
-    strokeWidth: 1,
-    roughness: 0,
-    opacity: 60,
-    roundness: { type: 2 },
-    points: [[0, 0], [endX - startX, endY - startY]] as [number, number][],
-    startBinding: { elementId: startId, focus: 0, gap: 4, fixedPoint: null },
-    endBinding: { elementId: endId, focus: 0, gap: 4, fixedPoint: null },
-    startArrowhead: null,
-    endArrowhead: "arrow" as const,
-    boundElements: [],
-    groupIds: [],
-    frameId: null,
-    isDeleted: false,
-    locked: false,
-    link: null,
-    updated: Date.now(),
-    version: 1,
-    versionNonce: Math.floor(Math.random() * 1000000),
-    seed: Math.floor(Math.random() * 1000000),
-    angle: 0,
-    elbowed: false,
-  };
+  function addArrow(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    stroke: string,
+    startId?: string,
+    endId?: string
+  ) {
+    const id = nextId();
+    elements.push({
+      id,
+      type: "arrow",
+      x: x1,
+      y: y1,
+      width: x2 - x1,
+      height: y2 - y1,
+      angle: 0,
+      strokeColor: stroke,
+      backgroundColor: "transparent",
+      fillStyle: "solid",
+      strokeWidth: 1,
+      roughness: 0,
+      opacity: 50,
+      groupIds: [],
+      frameId: null,
+      roundness: { type: 2 },
+      isDeleted: false,
+      boundElements: null,
+      locked: false,
+      link: null,
+      updated: 1,
+      seed: idCounter * 555,
+      version: 1,
+      versionNonce: idCounter * 666,
+      points: [
+        [0, 0],
+        [x2 - x1, y2 - y1],
+      ],
+      startBinding: startId
+        ? { elementId: startId, focus: 0, gap: 5, fixedPoint: null }
+        : null,
+      endBinding: endId
+        ? { elementId: endId, focus: 0, gap: 5, fixedPoint: null }
+        : null,
+      startArrowhead: null,
+      endArrowhead: "arrow",
+      elbowed: false,
+    });
+  }
+
+  // Center node
+  const centerW = 280;
+  const centerH = 60;
+  const cx = -centerW / 2;
+  const cy = -centerH / 2;
+  const centerId = addRect(
+    cx,
+    cy,
+    centerW,
+    centerH,
+    "#d97706",
+    "#fbbf24",
+    "⚡ Claude Code Config",
+    20
+  );
+
+  const branches = [
+    {
+      label: `Skills (${data.skills.length})`,
+      color: "#f59e0b",
+      bg: "#3d2800",
+      items: data.skills,
+      angle: -2.2,
+      dist: 280,
+    },
+    {
+      label: `Agents (${data.agents.length})`,
+      color: "#8b5cf6",
+      bg: "#2d1b69",
+      items: data.agents,
+      angle: -0.9,
+      dist: 300,
+    },
+    {
+      label: `Plugins (${data.plugins.length})`,
+      color: "#10b981",
+      bg: "#0a3d2c",
+      items: data.plugins,
+      angle: 0.3,
+      dist: 300,
+    },
+    {
+      label: `Hooks (${data.hooks.length})`,
+      color: "#3b82f6",
+      bg: "#1a2a4d",
+      items: data.hooks,
+      angle: 1.2,
+      dist: 280,
+    },
+    {
+      label: `MCP (${data.mcpServers.length})`,
+      color: "#06b6d4",
+      bg: "#0a3040",
+      items: data.mcpServers,
+      angle: 2.3,
+      dist: 280,
+    },
+    {
+      label: `Perms (${data.permissions.allow + data.permissions.deny})`,
+      color: "#ec4899",
+      bg: "#4d1a33",
+      items: [`${data.permissions.allow} allow`, `${data.permissions.deny} deny`],
+      angle: -3.5,
+      dist: 280,
+    },
+  ];
+
+  branches.forEach((branch) => {
+    const bw = 200;
+    const bh = 44;
+    const bx = Math.cos(branch.angle) * branch.dist - bw / 2;
+    const by = Math.sin(branch.angle) * branch.dist - bh / 2;
+
+    const branchId = addRect(bx, by, bw, bh, branch.bg, branch.color, branch.label, 15);
+
+    addArrow(0, 0, bx + bw / 2, by + bh / 2, branch.color, centerId, branchId);
+
+    // Sub-items
+    const items = branch.items.slice(0, 10);
+    items.forEach((item, i) => {
+      const itemDist = 180 + Math.floor(i / 5) * 170;
+      const spread = 0.12;
+      const itemAngle = branch.angle + (i - (items.length - 1) / 2) * spread;
+      const iw = 155;
+      const ih = 28;
+      const ix =
+        Math.cos(itemAngle) * (branch.dist + itemDist) - iw / 2;
+      const iy =
+        Math.sin(itemAngle) * (branch.dist + itemDist) - ih / 2;
+
+      const itemId = addRect(ix, iy, iw, ih, "#141425", branch.color + "88", item, 11);
+      addArrow(bx + bw / 2, by + bh / 2, ix + iw / 2, iy + ih / 2, branch.color + "44", branchId, itemId);
+    });
+
+    if (branch.items.length > 10) {
+      const moreAngle = branch.angle;
+      const moreDist = branch.dist + 180 + Math.ceil(10 / 5) * 170;
+      const mx = Math.cos(moreAngle) * moreDist - 75;
+      const my = Math.sin(moreAngle) * moreDist - 14;
+      addRect(mx, my, 150, 28, "#141425", "#555", `+${branch.items.length - 10} more...`, 11);
+    }
+  });
+
+  return elements;
 }
 
 export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
-  const { elements } = useMemo(() => {
-    const els: any[] = [];
+  const [mounted, setMounted] = useState(false);
+  const elementsRef = useRef<any[]>([]);
 
-    // Center node
-    const center = createNode(-100, -30, 250, 60, "Claude Code Config", {
-      bgColor: "#d97706",
-      strokeColor: "#fbbf24",
-      fontSize: 18,
-      roundness: 16,
-    });
-    els.push(center.rect, center.text);
-
-    const branches = [
-      { label: `Skills (${data.skills.length})`, color: "#f59e0b", items: data.skills, x: -500, y: -350 },
-      { label: `Agents (${data.agents.length})`, color: "#8b5cf6", items: data.agents, x: 350, y: -350 },
-      { label: `Plugins (${data.plugins.length})`, color: "#10b981", items: data.plugins, x: -500, y: 150 },
-      { label: `Hooks (${data.hooks.length})`, color: "#3b82f6", items: data.hooks, x: 350, y: 150 },
-      { label: `MCP (${data.mcpServers.length})`, color: "#06b6d4", items: data.mcpServers, x: 0, y: 300 },
-      { label: `Perms (${data.permissions.allow + data.permissions.deny})`, color: "#ec4899", items: [`${data.permissions.allow} allow`, `${data.permissions.deny} deny`], x: 0, y: -400 },
-    ];
-
-    branches.forEach((branch) => {
-      const branchNode = createNode(branch.x, branch.y, 200, 44, branch.label, {
-        bgColor: branch.color + "22",
-        strokeColor: branch.color,
-        fontSize: 14,
-      });
-      els.push(branchNode.rect, branchNode.text);
-
-      const arrow = createArrow(
-        center.id,
-        branchNode.id,
-        center.rect.x + center.rect.width / 2,
-        center.rect.y + center.rect.height / 2,
-        branchNode.rect.x + branchNode.rect.width / 2,
-        branchNode.rect.y + branchNode.rect.height / 2,
-        branch.color
-      );
-      els.push(arrow);
-
-      // Sub-items (max 12 for readability)
-      const itemsToShow = branch.items.slice(0, 12);
-      const columns = Math.ceil(itemsToShow.length / 6);
-
-      itemsToShow.forEach((item, i) => {
-        const col = Math.floor(i / 6);
-        const row = i % 6;
-        const offsetX = branch.x < 0 ? branch.x - 200 - col * 180 : branch.x + 220 + col * 180;
-        const offsetY = branch.y - 30 + row * 36;
-
-        const itemNode = createNode(offsetX, offsetY, 160, 28, item, {
-          bgColor: "#1a1a2e",
-          strokeColor: branch.color + "66",
-          fontSize: 10,
-          roundness: 6,
-        });
-        els.push(itemNode.rect, itemNode.text);
-
-        const subArrow = createArrow(
-          branchNode.id,
-          itemNode.id,
-          branchNode.rect.x + branchNode.rect.width / 2,
-          branchNode.rect.y + branchNode.rect.height / 2,
-          itemNode.rect.x + itemNode.rect.width / 2,
-          itemNode.rect.y + itemNode.rect.height / 2,
-          branch.color + "44"
-        );
-        els.push(subArrow);
-      });
-
-      if (branch.items.length > 12) {
-        const moreNode = createNode(
-          branch.x < 0 ? branch.x - 200 : branch.x + 220,
-          branch.y - 30 + 12 * 36,
-          160,
-          28,
-          `+${branch.items.length - 12} more...`,
-          { bgColor: "#1a1a2e", strokeColor: "#555", fontSize: 10, roundness: 6 }
-        );
-        els.push(moreNode.rect, moreNode.text);
-      }
-    });
-
-    return { elements: els };
+  useEffect(() => {
+    elementsRef.current = buildScene(data);
+    setMounted(true);
   }, [data]);
+
+  if (!mounted) return null;
 
   return (
     <Excalidraw
       initialData={{
-        elements,
+        elements: elementsRef.current,
         appState: {
-          viewBackgroundColor: "#0a0a1a",
+          viewBackgroundColor: "#0a0a14",
           theme: "dark",
-          gridSize: 20,
           zenModeEnabled: false,
           viewModeEnabled: false,
+          gridSize: null,
         },
         scrollToContent: true,
       }}
