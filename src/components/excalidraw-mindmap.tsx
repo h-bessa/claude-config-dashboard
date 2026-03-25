@@ -231,18 +231,25 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
     });
   }, [data]);
 
-  // scroll to content once API is available
+  // Use updateScene via API once ready, instead of relying on initialData
   useEffect(() => {
     if (api && convertedElements && convertedElements.length > 0) {
+      api.updateScene({ elements: convertedElements });
       setTimeout(() => {
-        api.scrollToContent(api.getSceneElements(), { fitToViewport: true, viewportZoomFactor: 0.85 });
-      }, 300);
+        api.scrollToContent(api.getSceneElements(), {
+          fitToViewport: true,
+          viewportZoomFactor: 0.8,
+        });
+      }, 200);
     }
   }, [api, convertedElements]);
 
-  const onApiReady = useCallback((excalidrawApi: any) => {
-    setApi(excalidrawApi);
-  }, []);
+  const onApiReady = useCallback(
+    (excalidrawApi: any) => {
+      setApi(excalidrawApi);
+    },
+    []
+  );
 
   if (!convertedElements) {
     return (
@@ -260,14 +267,12 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
       <ExcalidrawComp
         excalidrawAPI={onApiReady}
         initialData={{
-          elements: convertedElements,
           appState: {
             viewBackgroundColor: "#0a0a14",
             theme: "dark",
             zenModeEnabled: true,
             viewModeEnabled: false,
           },
-          scrollToContent: true,
         }}
         theme="dark"
       />
