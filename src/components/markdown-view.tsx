@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Eye, Code } from "lucide-react";
 
 export function MarkdownView({ content }: { content: string }) {
-  const [mode, setMode] = useState<"rendered" | "raw">("rendered");
+  const [mode, setMode] = useState<"rendered" | "raw">("raw");
 
   return (
     <div>
