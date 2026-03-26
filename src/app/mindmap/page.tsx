@@ -1,6 +1,6 @@
 import { fetchSettings, fetchSkillsList, fetchAgentsList } from "@/lib/github";
 import { SectionHeader } from "@/components/section-header";
-import { ExcalidrawMindmap } from "@/components/excalidraw-mindmap";
+import { MindmapLoader } from "@/components/mindmap-loader";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function MindmapPage() {
       />
       <div className="glass-card relative" style={{ height: "calc(100vh - 200px)" }}>
         <div className="absolute inset-0 overflow-hidden rounded-[inherit]">
-          <ExcalidrawMindmap data={configData} />
+          <MindmapLoader data={configData} />
         </div>
       </div>
     </>
