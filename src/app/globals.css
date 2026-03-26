@@ -198,3 +198,16 @@
   position: absolute !important;
   inset: 0 !important;
 }
+
+.excalidraw-wrapper .excalidraw,
+.excalidraw-wrapper .excalidraw .excalidraw__canvas-wrapper,
+.excalidraw-wrapper .excalidraw .excalidraw__canvas {
+  background: #0a0a14 !important;
+}
+
+.excalidraw-wrapper .excalidraw.theme--dark {
+  --color-surface-lowest: #0a0a14;
+  --color-surface-low: #0f0f1a;
+  --color-surface-mid: #14142a;
+  --island-bg-color: rgba(15, 15, 26, 0.85);
+}
