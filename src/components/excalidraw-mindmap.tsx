@@ -99,18 +99,27 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
     if (!api || hasLoadedRef.current) return;
     hasLoadedRef.current = true;
 
+    console.log("[mindmap] data received:", JSON.stringify(data).slice(0, 200));
     const skeleton = buildSkeleton(data);
+    console.log("[mindmap] skeleton elements:", skeleton.length);
     const elements = convertToExcalidrawElements(skeleton);
+    console.log("[mindmap] converted elements:", elements.length, elements[0]?.type, elements[0]?.id);
+
     api.updateScene({ elements });
+    console.log("[mindmap] updateScene called");
 
     requestAnimationFrame(() => {
       setTimeout(() => {
         const sceneElements = api.getSceneElements();
+        console.log("[mindmap] scene elements after update:", sceneElements.length);
         if (sceneElements.length > 0) {
           api.scrollToContent(sceneElements, {
             fitToViewport: true,
             viewportZoomFactor: 0.85,
           });
+          console.log("[mindmap] scrollToContent called");
+        } else {
+          console.warn("[mindmap] No scene elements found after updateScene!");
         }
       }, 500);
     });
