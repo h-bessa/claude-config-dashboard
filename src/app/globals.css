@@ -199,15 +199,20 @@
   inset: 0 !important;
 }
 
+/* Force dark background on all Excalidraw layers */
+.excalidraw-wrapper,
 .excalidraw-wrapper .excalidraw,
-.excalidraw-wrapper .excalidraw .excalidraw__canvas-wrapper,
-.excalidraw-wrapper .excalidraw .excalidraw__canvas {
-  background: #0a0a14 !important;
+.excalidraw-wrapper .excalidraw .layer-ui__wrapper,
+.excalidraw-wrapper .excalidraw .layer-ui__wrapper__top-right,
+.excalidraw-wrapper [class*="excalidraw"] {
+  --island-bg-color: rgba(10, 10, 20, 0.9) !important;
 }
 
-.excalidraw-wrapper .excalidraw.theme--dark {
-  --color-surface-lowest: #0a0a14;
-  --color-surface-low: #0f0f1a;
-  --color-surface-mid: #14142a;
-  --island-bg-color: rgba(15, 15, 26, 0.85);
+.excalidraw-wrapper .excalidraw {
+  background: #0a0a14 !important;
+  color-scheme: dark !important;
+}
+
+.excalidraw-wrapper canvas {
+  background: transparent !important;
 }
