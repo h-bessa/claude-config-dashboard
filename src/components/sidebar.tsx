@@ -12,11 +12,13 @@ import {
   Map,
   Server,
   LayoutDashboard,
+  Orbit,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/mindmap", label: "Mindmap", icon: Map },
+  { href: "/mindmap3d", label: "Mindmap 3D", icon: Orbit },
   { href: "/skills", label: "Skills", icon: Zap },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/plugins", label: "Plugins", icon: Plug },
