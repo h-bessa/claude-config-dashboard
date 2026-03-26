@@ -3,7 +3,7 @@ import { parseFrontmatter } from "@/lib/parse-frontmatter";
 import { SectionHeader } from "@/components/section-header";
 import { Graph3DLoader } from "@/components/graph3d-loader";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function Mindmap3DPage() {
   const [settings, skills, agents] = await Promise.all([

@@ -2,7 +2,7 @@ import { fetchAgentsList } from "@/lib/github";
 import { SectionHeader } from "@/components/section-header";
 import { Bot } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function AgentsPage() {
   const agents = await fetchAgentsList();

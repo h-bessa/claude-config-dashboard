@@ -3,7 +3,7 @@ import { SectionHeader } from "@/components/section-header";
 import { ShieldCheck, ShieldOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function PermissionsPage() {
   const settings = await fetchSettings();

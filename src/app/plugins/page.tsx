@@ -3,7 +3,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Plug, Check, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function PluginsPage() {
   const settings = await fetchSettings();

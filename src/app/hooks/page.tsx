@@ -3,7 +3,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Webhook, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const eventColors: Record<string, string> = {
   PreToolUse: "bg-blue-500/10 text-blue-400 ring-blue-500/20",

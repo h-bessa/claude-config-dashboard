@@ -35,19 +35,24 @@ export function SkillGrid({ skills }: { skills: SkillData[] }) {
 
   const categories: Record<string, SkillData[]> = {};
   filtered.forEach((skill) => {
-    const prefix = skill.name.split("-")[0];
-    const cat =
-      prefix === "workflow"
-        ? "Workflows"
-        : prefix === "utils"
-        ? "Utilities"
-        : prefix === "git"
-        ? "Git"
-        : prefix === "meta"
-        ? "Meta"
-        : prefix === "vercel"
-        ? "Vercel"
-        : "Custom";
+    let cat: string;
+    if (skill.type === "symlink") {
+      cat = "Symlinks";
+    } else {
+      const prefix = skill.name.split("-")[0];
+      cat =
+        prefix === "workflow"
+          ? "Workflows"
+          : prefix === "utils"
+          ? "Utilities"
+          : prefix === "git"
+          ? "Git"
+          : prefix === "meta"
+          ? "Meta"
+          : prefix === "vercel"
+          ? "Vercel"
+          : "Custom";
+    }
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push(skill);
   });
@@ -119,7 +124,7 @@ export function SkillGrid({ skills }: { skills: SkillData[] }) {
         ))}
 
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="glass max-w-4xl min-h-[60vh] border-white/10">
+        <DialogContent className="glass max-w-5xl border-white/10">
           <DialogHeader>
             <DialogTitle className="font-mono text-lg">
               /{selected?.name}

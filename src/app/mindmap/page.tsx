@@ -2,7 +2,7 @@ import { fetchSettings, fetchSkillsList, fetchAgentsList } from "@/lib/github";
 import { SectionHeader } from "@/components/section-header";
 import { MindmapLoader } from "@/components/mindmap-loader";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function MindmapPage() {
   const [settings, skills, agents] = await Promise.all([
