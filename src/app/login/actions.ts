@@ -7,9 +7,7 @@ export async function authenticate(_prevState: any, formData: FormData) {
   const password = formData.get("password") as string;
   const expected = process.env.AUTH_PASSWORD || "hydris";
 
-  console.log("[auth] password received:", JSON.stringify(password), "expected:", JSON.stringify(expected), "match:", password === expected);
-
-  if (password !== expected) {
+  if (!password || password.trim() !== expected.trim()) {
     return { error: "Wrong password" };
   }
 
