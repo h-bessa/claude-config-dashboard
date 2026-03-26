@@ -2,18 +2,18 @@
 
 import dynamic from "next/dynamic";
 
-const Graph3D = dynamic(
-  () => import("@/components/graph3d").then((mod) => mod.Graph3D),
+const NeuralGraph = dynamic(
+  () => import("@/components/neural-graph").then((mod) => mod.NeuralGraph),
   {
     ssr: false,
     loading: () => (
       <div className="flex h-full items-center justify-center text-muted-foreground">
-        Initializing 3D universe...
+        Initializing neural map...
       </div>
     ),
   }
 );
 
 export function Graph3DLoader({ data }: { data: any }) {
-  return <Graph3D data={data} />;
+  return <NeuralGraph data={data} />;
 }
