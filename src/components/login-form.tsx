@@ -5,12 +5,7 @@ import { authenticate } from "@/app/login/actions";
 import { Terminal } from "lucide-react";
 
 export function LoginForm() {
-  const [state, formAction, isPending] = useActionState(
-    async (_prev: any, formData: FormData) => {
-      return authenticate(formData);
-    },
-    null
-  );
+  const [state, formAction, isPending] = useActionState(authenticate, null);
 
   return (
     <div className="w-full max-w-sm">
