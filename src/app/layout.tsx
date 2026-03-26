@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Sidebar } from "@/components/sidebar";
+import { LayoutShell } from "@/components/layout-shell";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,14 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-background text-foreground dot-grid">
         <TooltipProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 overflow-auto">
-              <div className="mx-auto max-w-7xl px-6 py-8">
-                {children}
-              </div>
-            </main>
-          </div>
+          <LayoutShell>{children}</LayoutShell>
         </TooltipProvider>
       </body>
     </html>
