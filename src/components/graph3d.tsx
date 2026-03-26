@@ -176,28 +176,38 @@ export function Graph3D({ data }: { data: ConfigData }) {
   }, []);
 
   const handleNodeClick = useCallback((node: any) => {
-    if (node.id === "core" || node.id.startsWith("cat-")) {
-      // Zoom to category
-      if (fgRef.current) {
-        const dist = 200;
-        const ratio = 1 + dist / Math.hypot(node.x, node.y, node.z);
-        fgRef.current.cameraPosition(
-          { x: node.x * ratio, y: node.y * ratio, z: node.z * ratio },
-          node, 1200
-        );
-      }
-      return;
+    if (!fgRef.current) return;
+
+    // Freeze all nodes in place so they don't drift during zoom
+    graphData.nodes.forEach((n: any) => {
+      n.fx = n.x;
+      n.fy = n.y;
+      n.fz = n.z;
+    });
+
+    const isCat = node.id === "core" || node.id.startsWith("cat-");
+    const dist = isCat ? 200 : 80;
+    const ratio = 1 + dist / Math.hypot(node.x, node.y, node.z);
+
+    fgRef.current.cameraPosition(
+      { x: node.x * ratio, y: node.y * ratio, z: node.z * ratio },
+      node,
+      isCat ? 1200 : 1000
+    );
+
+    if (!isCat) {
+      setSelected(node as GraphNode);
     }
-    setSelected(node as GraphNode);
-    if (fgRef.current) {
-      const dist = 80;
-      const ratio = 1 + dist / Math.hypot(node.x, node.y, node.z);
-      fgRef.current.cameraPosition(
-        { x: node.x * ratio, y: node.y * ratio, z: node.z * ratio },
-        node, 1000
-      );
-    }
-  }, []);
+
+    // Unfreeze after zoom completes
+    setTimeout(() => {
+      graphData.nodes.forEach((n: any) => {
+        n.fx = undefined;
+        n.fy = undefined;
+        n.fz = undefined;
+      });
+    }, isCat ? 1300 : 1100);
+  }, [graphData.nodes]);
 
   // Custom node rendering with glow
   const nodeThreeObject = useCallback((node: any) => {
@@ -300,9 +310,9 @@ export function Graph3D({ data }: { data: ConfigData }) {
           enableNodeDrag={true}
           enableNavigationControls={true}
           showNavInfo={false}
-          warmupTicks={100}
-          cooldownTime={4000}
-          d3AlphaDecay={0.015}
+          warmupTicks={120}
+          cooldownTime={2000}
+          d3AlphaDecay={0.03}
           d3VelocityDecay={0.25}
         />
       </div>
