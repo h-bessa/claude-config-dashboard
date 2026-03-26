@@ -2,7 +2,7 @@
 
 import { Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 interface ConfigData {
   skills: string[];
@@ -16,18 +16,11 @@ interface ConfigData {
 function buildSkeleton(data: ConfigData) {
   const elements: any[] = [];
 
-  // Center
   elements.push({
     type: "rectangle",
-    x: -140,
-    y: -30,
-    width: 280,
-    height: 60,
-    backgroundColor: "#d97706",
-    strokeColor: "#fbbf24",
-    strokeWidth: 2,
-    fillStyle: "solid",
-    roughness: 0,
+    x: -140, y: -30, width: 280, height: 60,
+    backgroundColor: "#d97706", strokeColor: "#fbbf24",
+    strokeWidth: 2, fillStyle: "solid", roughness: 0,
     label: { text: "Claude Code Config", fontSize: 18, strokeColor: "#ffffff" },
   });
 
@@ -79,7 +72,7 @@ function buildSkeleton(data: ConfigData) {
       elements.push({
         type: "text",
         x: (isLeft ? b.x - 150 : b.x + 220), y: b.y - 10 + 8 * 32 + 5,
-        text: `+${b.items.length - 8} more...`, fontSize: 10, strokeColor: "#666",
+        text: `+${b.items.length - 8} more...`, fontSize: 10, strokeColor: "#666666",
       });
     }
   });
@@ -88,42 +81,14 @@ function buildSkeleton(data: ConfigData) {
 }
 
 export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
-  const [api, setApi] = useState<any>(null);
-  const hasLoadedRef = useRef(false);
-
-  const onApiReady = useCallback((excalidrawApi: any) => {
-    setApi(excalidrawApi);
-  }, []);
-
-  useEffect(() => {
-    if (!api || hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-
-    console.log("[mindmap] data received:", JSON.stringify(data).slice(0, 200));
+  // Build elements once, synchronously, before first render
+  const elements = useMemo(() => {
     const skeleton = buildSkeleton(data);
-    console.log("[mindmap] skeleton elements:", skeleton.length);
-    const elements = convertToExcalidrawElements(skeleton);
-    console.log("[mindmap] converted elements:", elements.length, elements[0]?.type, elements[0]?.id);
+    return convertToExcalidrawElements(skeleton);
+  }, [data]);
 
-    api.updateScene({ elements });
-    console.log("[mindmap] updateScene called");
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const sceneElements = api.getSceneElements();
-        console.log("[mindmap] scene elements after update:", sceneElements.length);
-        if (sceneElements.length > 0) {
-          api.scrollToContent(sceneElements, {
-            fitToViewport: true,
-            viewportZoomFactor: 0.85,
-          });
-          console.log("[mindmap] scrollToContent called");
-        } else {
-          console.warn("[mindmap] No scene elements found after updateScene!");
-        }
-      }, 500);
-    });
-  }, [api, data]);
+  // Key forces full remount if data changes
+  const [key] = useState(() => Math.random().toString(36).slice(2));
 
   return (
     <div
@@ -131,13 +96,15 @@ export function ExcalidrawMindmap({ data }: { data: ConfigData }) {
       style={{ width: "100%", height: "100%", position: "relative" }}
     >
       <Excalidraw
-        excalidrawAPI={onApiReady}
+        key={key}
         initialData={{
+          elements,
           appState: {
             viewBackgroundColor: "#0a0a14",
             theme: "dark",
             zenModeEnabled: true,
           },
+          scrollToContent: true,
         }}
         theme="dark"
       />
