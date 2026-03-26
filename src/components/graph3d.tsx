@@ -307,8 +307,9 @@ export function Graph3D({ data }: { data: ConfigData }) {
           linkCurveRotation={0.5}
           onNodeClick={handleNodeClick}
           onNodeHover={(node: any) => setHovered(node?.id || null)}
-          enableNodeDrag={true}
+          enableNodeDrag={false}
           enableNavigationControls={true}
+          enablePointerInteraction={true}
           showNavInfo={false}
           warmupTicks={120}
           cooldownTime={2000}
