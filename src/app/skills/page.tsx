@@ -9,7 +9,9 @@ export default async function SkillsPage() {
   const skills = await fetchSkillsList();
 
   const skillsWithMeta = await Promise.all(
-    skills.map(async (skill) => {
+    skills
+      .filter((skill) => skill.type !== "symlink")
+      .map(async (skill) => {
       const content = await fetchSkillContent(skill.name);
       const { metadata, body } = parseFrontmatter(content);
       return {

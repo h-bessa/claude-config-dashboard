@@ -119,14 +119,14 @@ export function SkillGrid({ skills }: { skills: SkillData[] }) {
         ))}
 
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="glass max-w-2xl border-white/10">
+        <DialogContent className="glass max-w-4xl min-h-[60vh] border-white/10">
           <DialogHeader>
             <DialogTitle className="font-mono text-lg">
               /{selected?.name}
             </DialogTitle>
           </DialogHeader>
           {selected && (
-            <ScrollArea className="max-h-[60vh]">
+            <ScrollArea className="max-h-[70vh]">
               <div className="space-y-4 pr-4">
                 {selected.description && (
                   <p className="text-sm text-muted-foreground">

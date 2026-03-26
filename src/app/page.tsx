@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fetchSettings, fetchSkillsList, fetchAgentsList, fetchScriptsList } from "@/lib/github";
 import { StatCard } from "@/components/stat-card";
 import { SectionHeader } from "@/components/section-header";
@@ -42,14 +43,30 @@ export default async function OverviewPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Skills" value={skills.length} icon={Zap} color="amber" />
-        <StatCard label="Agents" value={agents.length} icon={Bot} color="violet" />
-        <StatCard label="Plugins" value={plugins.length} icon={Plug} color="emerald" />
-        <StatCard label="Hooks" value={hooksEvents.length} icon={Webhook} color="blue" />
-        <StatCard label="Scripts" value={scripts.length} icon={Terminal} color="pink" />
-        <StatCard label="MCP Servers" value={mcpServers.length} icon={Server} color="cyan" />
-        <StatCard label="Allowed" value={allowPerms} icon={ShieldCheck} color="emerald" />
-        <StatCard label="Denied" value={denyPerms} icon={Shield} color="pink" />
+        <Link href="/skills" className="transition-transform hover:scale-105">
+          <StatCard label="Skills" value={skills.length} icon={Zap} color="amber" />
+        </Link>
+        <Link href="/agents" className="transition-transform hover:scale-105">
+          <StatCard label="Agents" value={agents.length} icon={Bot} color="violet" />
+        </Link>
+        <Link href="/plugins" className="transition-transform hover:scale-105">
+          <StatCard label="Plugins" value={plugins.length} icon={Plug} color="emerald" />
+        </Link>
+        <Link href="/hooks" className="transition-transform hover:scale-105">
+          <StatCard label="Hooks" value={hooksEvents.length} icon={Webhook} color="blue" />
+        </Link>
+        <Link href="/scripts" className="transition-transform hover:scale-105">
+          <StatCard label="Scripts" value={scripts.length} icon={Terminal} color="pink" />
+        </Link>
+        <Link href="/mcp" className="transition-transform hover:scale-105">
+          <StatCard label="MCP Servers" value={mcpServers.length} icon={Server} color="cyan" />
+        </Link>
+        <Link href="/permissions" className="transition-transform hover:scale-105">
+          <StatCard label="Allowed" value={allowPerms} icon={ShieldCheck} color="emerald" />
+        </Link>
+        <Link href="/permissions" className="transition-transform hover:scale-105">
+          <StatCard label="Denied" value={denyPerms} icon={Shield} color="pink" />
+        </Link>
       </div>
 
       {/* Enabled Plugins section */}
@@ -70,27 +87,8 @@ export default async function OverviewPage() {
         </div>
       </div>
 
-      {/* Environment Variables section */}
+{/* Quick Config section */}
       <div className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold tracking-tight">Environment Variables</h2>
-        <div className="glass-card divide-y divide-white/[0.06] overflow-hidden">
-          {Object.entries(settings.env || {}).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between px-4 py-3">
-              <code className="font-mono text-xs text-amber-400">{key}</code>
-              <code className="font-mono text-xs text-muted-foreground">{String(value)}</code>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Config section */}
-      <div className="mt-10 grid grid-cols-2 gap-4">
-        <div className="glass-card p-5">
-          <h3 className="text-sm font-semibold">Status Line</h3>
-          <p className="mt-2 font-mono text-xs text-muted-foreground break-all">
-            {settings.statusLine?.command || "Not configured"}
-          </p>
-        </div>
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold">Settings</h3>
           <div className="mt-2 space-y-1">
