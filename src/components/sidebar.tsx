@@ -16,10 +16,12 @@ import {
   Orbit,
   PanelLeftClose,
   PanelLeft,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/claudemd", label: "CLAUDE.md", icon: FileText },
   { href: "/skills", label: "Skills", icon: Zap },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/plugins", label: "Plugins", icon: Plug },
