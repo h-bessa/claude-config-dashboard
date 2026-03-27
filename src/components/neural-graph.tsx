@@ -108,6 +108,7 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
   const [selected, setSelected] = useState<Node | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const simRef = useRef<any>(null);
@@ -210,6 +211,17 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
     setIsPanning(false);
   }, []);
 
+  // Wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    setZoom((z) => Math.min(3, Math.max(0.2, z + delta)));
+  }, []);
+
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(3, z + 0.15)), []);
+  const zoomOut = useCallback(() => setZoom((z) => Math.max(0.2, z - 0.15)), []);
+  const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
+
   const handleClick = useCallback((node: Node) => {
     if (node.id === "core" || node.id.startsWith("cat-")) return;
     setSelected(node);
@@ -237,6 +249,7 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
         >
           <defs>
             {Object.entries(GROUPS).map(([group, { glow }]) => (
@@ -256,7 +269,7 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
           <rect width={dimensions.width} height={dimensions.height} fill="#04040a" />
 
           {/* Pan group */}
-          <g transform={`translate(${pan.x},${pan.y})`}>
+          <g transform={`translate(${dimensions.width / 2 + pan.x},${dimensions.height / 2 + pan.y}) scale(${zoom}) translate(${-dimensions.width / 2},${-dimensions.height / 2})`}>
             {/* Links */}
             <g>
               {links.map((link, i) => {
@@ -349,6 +362,29 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
             </g>
           </g>
         </svg>
+
+        {/* Zoom controls */}
+        <div className="absolute bottom-4 right-4 flex flex-col gap-1">
+          <button
+            onClick={zoomIn}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+          >
+            +
+          </button>
+          <button
+            onClick={zoomOut}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+          >
+            −
+          </button>
+          <button
+            onClick={resetView}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-[10px] font-medium text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+            title="Reset view"
+          >
+            ⌂
+          </button>
+        </div>
 
         {/* Legend */}
         <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
