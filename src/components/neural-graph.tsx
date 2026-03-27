@@ -70,10 +70,8 @@ function buildGraph(data: ConfigData) {
     links.push({ source, target });
   };
 
-  // Core
   addNode("core", "Claude Code", "core", 28);
 
-  // Categories
   addNode("cat-skills", `Skills (${data.skills.length})`, "skill", 18);
   addNode("cat-agents", `Agents (${data.agents.length})`, "agent", 18);
   addNode("cat-plugins", `Plugins (${data.plugins.length})`, "plugin", 18);
@@ -85,7 +83,6 @@ function buildGraph(data: ConfigData) {
     addLink("core", id)
   );
 
-  // Items
   data.skills.forEach((s) => { addNode(`s-${s.name}`, s.name, "skill", 8, s); addLink("cat-skills", `s-${s.name}`); });
   data.agents.forEach((a) => { addNode(`a-${a.name}`, a.name, "agent", 10, a); addLink("cat-agents", `a-${a.name}`); });
   data.plugins.forEach((p) => { addNode(`p-${p.name}`, p.name, "plugin", 9, p); addLink("cat-plugins", `p-${p.name}`); });
@@ -96,7 +93,6 @@ function buildGraph(data: ConfigData) {
     m.tools.slice(0, 4).forEach((t) => { addNode(`t-${m.name}-${t}`, t, "tool", 5, { name: t, server: m.name }); addLink(`m-${m.name}`, `t-${m.name}-${t}`); });
   });
 
-  // Permissions as 2 nodes
   addNode("perm-allow", `${data.permissions.allow.length} allow`, "permission", 10, { type: "allow", rules: data.permissions.allow });
   addNode("perm-deny", `${data.permissions.deny.length} deny`, "permission", 10, { type: "deny", rules: data.permissions.deny });
   addLink("cat-perms", "perm-allow");
@@ -111,10 +107,44 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
   const [selected, setSelected] = useState<Node | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const simRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
 
   const { nodes, links } = useMemo(() => buildGraph(data), [data]);
+
+  // Build adjacency map for hover highlighting
+  const adjacency = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    links.forEach((link) => {
+      const sId = typeof link.source === "string" ? link.source : link.source.id;
+      const tId = typeof link.target === "string" ? link.target : link.target.id;
+      if (!map.has(sId)) map.set(sId, new Set());
+      if (!map.has(tId)) map.set(tId, new Set());
+      map.get(sId)!.add(tId);
+      map.get(tId)!.add(sId);
+    });
+    return map;
+  }, [links]);
+
+  const isConnected = useCallback(
+    (nodeId: string) => {
+      if (!hovered) return true;
+      if (nodeId === hovered) return true;
+      return adjacency.get(hovered)?.has(nodeId) ?? false;
+    },
+    [hovered, adjacency]
+  );
+
+  const isLinkConnected = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (!hovered) return true;
+      return (sourceId === hovered || targetId === hovered);
+    },
+    [hovered]
+  );
 
   // Responsive
   useEffect(() => {
@@ -159,12 +189,32 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
     };
   }, [nodes, links, dimensions]);
 
+  // Pan handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only pan on background (not on nodes)
+    if ((e.target as SVGElement).tagName === "rect") {
+      setIsPanning(true);
+      panStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    }
+  }, [pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return;
+    setPan({
+      x: panStart.current.panX + (e.clientX - panStart.current.x),
+      y: panStart.current.panY + (e.clientY - panStart.current.y),
+    });
+  }, [isPanning]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
   const handleClick = useCallback((node: Node) => {
     if (node.id === "core" || node.id.startsWith("cat-")) return;
     setSelected(node);
   }, []);
 
-  // Build arc path between two points (curved link like Rowboat)
   const arcPath = (x1: number, y1: number, x2: number, y2: number) => {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -174,8 +224,20 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
 
   return (
     <>
-      <div ref={containerRef} className="h-full w-full relative">
-        <svg width={dimensions.width} height={dimensions.height} className="absolute inset-0">
+      <div
+        ref={containerRef}
+        className="h-full w-full relative overflow-hidden"
+        style={{ cursor: isPanning ? "grabbing" : "grab" }}
+      >
+        <svg
+          width={dimensions.width}
+          height={dimensions.height}
+          className="absolute inset-0"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
           <defs>
             {Object.entries(GROUPS).map(([group, { glow }]) => (
               <filter key={group} id={`glow-${group}`} x="-50%" y="-50%" width="200%" height="200%">
@@ -190,90 +252,101 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
             ))}
           </defs>
 
-          {/* Background */}
+          {/* Background (clickable for pan) */}
           <rect width={dimensions.width} height={dimensions.height} fill="#04040a" />
 
-          {/* Links */}
-          <g>
-            {links.map((link, i) => {
-              const sourceId = typeof link.source === "string" ? link.source : link.source.id;
-              const targetId = typeof link.target === "string" ? link.target : link.target.id;
-              const s = nodePositions.get(sourceId);
-              const t = nodePositions.get(targetId);
-              if (!s || !t) return null;
-              return (
-                <path
-                  key={i}
-                  d={arcPath(s.x, s.y, t.x, t.y)}
-                  stroke="#333"
-                  strokeOpacity={0.35}
-                  strokeWidth={1}
-                  fill="none"
-                />
-              );
-            })}
-          </g>
-
-          {/* Nodes */}
-          <g>
-            {nodes.map((node) => {
-              const pos = nodePositions.get(node.id);
-              if (!pos) return null;
-              const isHovered = hovered === node.id;
-              const isCategory = node.id === "core" || node.id.startsWith("cat-");
-              const isClickable = !isCategory;
-
-              return (
-                <g
-                  key={node.id}
-                  transform={`translate(${pos.x},${pos.y})`}
-                  onClick={() => handleClick(node)}
-                  onMouseEnter={() => setHovered(node.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{ cursor: isClickable ? "pointer" : "default" }}
-                >
-                  {/* Outer glow circle */}
-                  <circle
-                    r={node.radius + (isHovered ? 6 : 3)}
-                    fill={node.color}
-                    opacity={isHovered ? 0.2 : 0.08}
-                    filter={isHovered ? `url(#glow-${node.group})` : undefined}
+          {/* Pan group */}
+          <g transform={`translate(${pan.x},${pan.y})`}>
+            {/* Links */}
+            <g>
+              {links.map((link, i) => {
+                const sourceId = typeof link.source === "string" ? link.source : link.source.id;
+                const targetId = typeof link.target === "string" ? link.target : link.target.id;
+                const s = nodePositions.get(sourceId);
+                const t = nodePositions.get(targetId);
+                if (!s || !t) return null;
+                const connected = isLinkConnected(sourceId, targetId);
+                return (
+                  <path
+                    key={i}
+                    d={arcPath(s.x, s.y, t.x, t.y)}
+                    stroke={connected && hovered ? GROUPS[nodes.find(n => n.id === (sourceId === hovered ? sourceId : targetId))?.group || "core"]?.color || "#333" : "#333"}
+                    strokeOpacity={hovered ? (connected ? 0.6 : 0.08) : 0.35}
+                    strokeWidth={connected && hovered ? 1.5 : 1}
+                    fill="none"
+                    style={{ transition: "stroke-opacity 0.3s, stroke-width 0.3s" }}
                   />
-                  {/* Main circle */}
-                  <circle
-                    r={node.radius}
-                    fill={node.color}
-                    opacity={isHovered ? 1 : 0.85}
-                    stroke={isHovered ? node.glow : "transparent"}
-                    strokeWidth={isHovered ? 2 : 0}
-                  />
-                  {/* Emoji */}
-                  {isCategory && (
-                    <text
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={node.radius * 0.8}
-                      fill="white"
-                      style={{ pointerEvents: "none" }}
-                    >
-                      {node.emoji}
-                    </text>
-                  )}
-                  {/* Label */}
-                  <text
-                    y={node.radius + 14}
-                    textAnchor="middle"
-                    fill={isHovered ? "#fff" : "#999"}
-                    fontSize={isCategory ? 11 : 9}
-                    fontFamily="var(--font-mono), monospace"
-                    fontWeight={isCategory ? 600 : 400}
-                    style={{ pointerEvents: "none", transition: "fill 0.2s" }}
+                );
+              })}
+            </g>
+
+            {/* Nodes */}
+            <g>
+              {nodes.map((node) => {
+                const pos = nodePositions.get(node.id);
+                if (!pos) return null;
+                const isNodeHovered = hovered === node.id;
+                const connected = isConnected(node.id);
+                const dimmed = hovered && !connected;
+                const isCategory = node.id === "core" || node.id.startsWith("cat-");
+                const isClickable = !isCategory;
+
+                return (
+                  <g
+                    key={node.id}
+                    transform={`translate(${pos.x},${pos.y})`}
+                    onClick={(e) => { e.stopPropagation(); handleClick(node); }}
+                    onMouseEnter={() => setHovered(node.id)}
+                    onMouseLeave={() => setHovered(null)}
+                    style={{
+                      cursor: isClickable ? "pointer" : "default",
+                      transition: "opacity 0.3s",
+                      opacity: dimmed ? 0.15 : 1,
+                    }}
                   >
-                    {node.name}
-                  </text>
-                </g>
-              );
-            })}
+                    {/* Outer glow */}
+                    <circle
+                      r={node.radius + (isNodeHovered ? 6 : 3)}
+                      fill={node.color}
+                      opacity={isNodeHovered ? 0.25 : 0.08}
+                      filter={isNodeHovered ? `url(#glow-${node.group})` : undefined}
+                    />
+                    {/* Main circle */}
+                    <circle
+                      r={node.radius}
+                      fill={node.color}
+                      opacity={isNodeHovered ? 1 : 0.85}
+                      stroke={isNodeHovered ? node.glow : "transparent"}
+                      strokeWidth={isNodeHovered ? 2 : 0}
+                    />
+                    {/* Emoji */}
+                    {isCategory && (
+                      <text
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={node.radius * 0.8}
+                        fill="white"
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {node.emoji}
+                      </text>
+                    )}
+                    {/* Label */}
+                    <text
+                      y={node.radius + 14}
+                      textAnchor="middle"
+                      fill={isNodeHovered ? "#fff" : connected || !hovered ? "#999" : "#333"}
+                      fontSize={isCategory ? 11 : 9}
+                      fontFamily="var(--font-mono), monospace"
+                      fontWeight={isCategory ? 600 : 400}
+                      style={{ pointerEvents: "none", transition: "fill 0.3s" }}
+                    >
+                      {node.name}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
           </g>
         </svg>
 
@@ -288,9 +361,9 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
         </div>
       </div>
 
-      {/* Detail panel */}
+      {/* Detail modal */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="glass !max-w-[90vw] w-[90vw] border-white/10">
+        <DialogContent className="glass max-w-2xl border-white/10">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 font-mono text-lg">
               {selected?.emoji} {selected?.name}
