@@ -363,37 +363,40 @@ export function NeuralGraph({ data }: { data: ConfigData }) {
           </g>
         </svg>
 
-        {/* Zoom controls */}
-        <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-          <button
-            onClick={zoomIn}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
-          >
-            +
-          </button>
-          <button
-            onClick={zoomOut}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
-          >
-            −
-          </button>
-          <button
-            onClick={resetView}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-[10px] font-medium text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
-            title="Reset view"
-          >
-            ⌂
-          </button>
-        </div>
+        {/* Overlay controls — pointer-events-none so they don't block SVG interactions */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* Zoom controls */}
+          <div className="pointer-events-auto absolute bottom-3 right-3 flex flex-col gap-1">
+            <button
+              onClick={zoomIn}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+            >
+              +
+            </button>
+            <button
+              onClick={zoomOut}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-sm text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+            >
+              −
+            </button>
+            <button
+              onClick={resetView}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-[10px] font-medium text-white/70 ring-1 ring-white/[0.08] backdrop-blur-sm transition-colors hover:bg-white/[0.1] hover:text-white"
+              title="Reset view"
+            >
+              ⌂
+            </button>
+          </div>
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
-          {Object.entries(GROUPS).filter(([k]) => !["tool", "core"].includes(k)).map(([group, { color, glow }]) => (
-            <div key={group} className="flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 backdrop-blur-sm ring-1 ring-white/[0.06]">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${glow}` }} />
-              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{group}</span>
-            </div>
-          ))}
+          {/* Legend */}
+          <div className="pointer-events-auto absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+            {Object.entries(GROUPS).filter(([k]) => !["tool", "core"].includes(k)).map(([group, { color, glow }]) => (
+              <div key={group} className="flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-0.5 backdrop-blur-sm ring-1 ring-white/[0.06]">
+                <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${glow}` }} />
+                <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground">{group}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
